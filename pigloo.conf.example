@@ -1,0 +1,5 @@
+[DISCORD]
+Token = %(DISCORD_TOKEN)s
+
+[BOT]
+prefix = !

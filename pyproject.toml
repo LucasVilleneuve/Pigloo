@@ -1,0 +1,42 @@
+[project]
+name = "pigloo"
+version = "0.1.0"
+description = "A Discord bot that posts MyAnimeList/AniList feed updates"
+authors = [
+    {name = "Lucas Villeneuve",email = "lu.villeneuve@proton.me"}
+]
+readme = "README.md"
+requires-python = ">=3.10,<4.0"
+dependencies = [
+    "discord-py (>=2.5.2,<3.0.0)",
+    "typer (>=0.15.2,<0.16.0)",
+    "loguru (>=0.7.3,<0.8.0)",
+    "pydantic (>=2.11.3,<3.0.0)",
+    "pytz (>=2025.2,<2026.0)",
+]
+
+[project.scripts]
+cli = "src.main:main"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.3.5"
+dpytest = "^0.7.0"
+pytest-cov = "^6.1.1"
+
+
+[tool.poetry.group.dev.dependencies]
+devtools = "^0.12.2"
+ruff = "^0.11.4"
+
+
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = ["F401"]
+
+
+[tool.pytest.ini_options]
+addopts = "--cov=pigloo --cov-report xml"
