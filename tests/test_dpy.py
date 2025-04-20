@@ -1,5 +1,5 @@
-import pytest
 import discord.ext.test as dpytest
+import pytest
 
 
 @pytest.mark.asyncio

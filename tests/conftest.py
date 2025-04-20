@@ -1,9 +1,11 @@
-import os
 import glob
-import pytest_asyncio
+import os
+
 import discord
 import discord.ext.test as dpytest
+import pytest_asyncio
 from discord.client import _LoopSentinel
+
 import pigloo.bot
 
 

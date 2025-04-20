@@ -1,11 +1,17 @@
-import discord
 import asyncio
 import signal
 import traceback
+import uuid
 from contextlib import suppress
+from datetime import datetime
+
+import discord
 from discord.ext.commands import Bot
 from loguru import logger
+
 from pigloo.config import config
+from pigloo.embed import create_embed_from_feed, send_embed
+from pigloo.feed import Feed, Media, Service, User
 
 
 class PiglooBot(Bot):
@@ -15,19 +21,19 @@ class PiglooBot(Bot):
             intents.members = True
             intents.message_content = True
 
-        super().__init__(command_prefix=config.get('BOT', 'prefix'), intents=intents)
+        super().__init__(command_prefix=config.get("BOT", "prefix"), intents=intents)
         self.add_commands()
-    
+
     async def start(self):
         logger.success("Starting Pigloo...")
-        await super().start(config.get('DISCORD', 'Token'))
-    
+        await super().start(config.get("DISCORD", "Token"))
+
     async def close(self):
         logger.success("Stopping Pigloo...")
         await super().close()
 
     async def on_ready(self):
-        logger.info(f'Logged in as {self.user} ({self.user.id})')
+        logger.info(f"Logged in as {self.user} ({self.user.id})")
 
     async def on_error(self, event, *args, **kwargs):
         logger.error(f"Event {event}. {traceback.format_exc()}")
@@ -48,7 +54,7 @@ async def exit_app(signame):
     # Cancel all tasks except the current one
     tasks = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
     for task in tasks:
-        logger.debug("Cancelling task " + task.get_name())
+        logger.debug(f"Cancelling task {task.get_name()}")
         task.cancel()
         # Cancelled task raises asyncio.CancelledError that we can suppress:
         with suppress(asyncio.CancelledError):
@@ -60,10 +66,9 @@ async def exit_app(signame):
     asyncio.get_event_loop().stop()
 
 
-
 async def main():
     loop = asyncio.get_event_loop()
-    
+
     # Catch SIGINT signal (Ctrl-C) and SIGTERM signal (kill)
     for signame in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(signame, lambda signame=signame: asyncio.create_task(exit_app(signame)))

@@ -17,7 +17,9 @@ class Media(BaseModel):
     name: str
     service: Service
     max_progress: int
+    url: HttpUrl
     image: HttpUrl
+    type: str  # e.g. "anime", "manga", etc.
 
 
 class Feed(BaseModel):

@@ -1,25 +1,42 @@
+from typing import Optional
+
 import discord
 from loguru import logger
-from typing import Optional
+
+from pigloo.config import config
 from pigloo.feed import Feed
+
 
 def create_embed_from_feed(feed: Feed) -> Optional[discord.Embed]:
     try:
-        embed = discord.Embed(colour=0xEED000, description=feed.media.name+ "\n```" + str(feed.progress) + " - " + str(feed.media.max_progress) + "```", timestamp=feed.datetime)
+        description = f"[{feed.media.name}]({feed.media.url}) - {feed.media.type}\n"
+        description += f"```Watching | {feed.progress} of {feed.media.max_progress} episodes```"
+        embed = discord.Embed(colour=0xEED000, description=description, timestamp=feed.datetime)
         embed.set_thumbnail(url=feed.media.image)
-        embed.set_author(name=feed.user.name, url="https://myanimelist.net/profile/" + feed.user.name, icon_url="") #TODO icon_url
-        embed.set_footer(text="Pigloo", icon_url="") # TODO icon_url
-        
+        author_name = f"{feed.user.name}'s {feed.service.name}"
+        author_url = f"{config.get('ANILIST', 'profile_url')}{feed.user.name}"
+        embed.set_author(name=author_name, url=author_url, icon_url=config.get("ANILIST", "icon_url"))
+        embed.set_footer(
+            text=config.get("BOT", "name"), icon_url=config.get("ANILIST", "icon_url")
+        )  # TODO Use correct icon url
+
         return embed
     except Exception as e:
-        logger.error("Error when generating the embed: " + str(e))
+        logger.error(f"Error when generating the embed: {str(e)}")
         return
 
 
 async def send_embed(embed: discord.Embed, channel: discord.channel) -> None:
+    """
+    Sends an embed message to a specified Discord channel.
+    """
+    if channel is None:
+        logger.error("Channel is None, cannot send embed.")
+        return
+
     try:
         await channel.send(embed=embed)
         logger.info(f"Message sent in channel: {channel.id}")
     except Exception as e:
-        logger.debug(f"Impossible to send a message on '{channel.id}': {e}") 
+        logger.error(f"Impossible to send a message on '{channel.id}': {e}")
         return

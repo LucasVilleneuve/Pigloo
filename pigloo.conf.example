@@ -3,3 +3,8 @@ Token = %(DISCORD_TOKEN)s
 
 [BOT]
 prefix = !
+name = Pigloo
+
+[ANILIST]
+profile_url = https://anilist.co/user/
+icon_url = https://anilist.co/img/icons/android-chrome-512x512.png
