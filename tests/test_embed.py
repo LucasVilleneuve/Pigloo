@@ -9,7 +9,7 @@ from logot import Logot, logged
 from pigloo.bot import PiglooBot
 from pigloo.config import config
 from pigloo.embed import create_embed_from_feed, send_embed
-from pigloo.feed import Feed, Media, Service, User
+from pigloo.feed import Anime, Feed, Manga, Media, Service, User
 
 
 @pytest.mark.asyncio
@@ -115,9 +115,10 @@ async def test_send_embed_with_missing_rights(bot: PiglooBot, logot: Logot):
 
 
 @pytest.mark.parametrize(
-    "media_name, media_url, media_type, progress, max_progress, user_name, service_name, expected_description",
+    "media_type, media_name, media_url, media_format, progress, max_progress, user_name, service_name, expected_description",
     [
         (
+            Anime,
             "Anime1",
             "https://example.com/anime1",
             "TV",
@@ -128,6 +129,7 @@ async def test_send_embed_with_missing_rights(bot: PiglooBot, logot: Logot):
             "[Anime1](https://example.com/anime1) - TV\n```Watching | 3 of 12 episodes```",
         ),
         (
+            Manga,
             "Manga2",
             "https://example.com/manga2",
             "Manga",
@@ -135,9 +137,10 @@ async def test_send_embed_with_missing_rights(bot: PiglooBot, logot: Logot):
             50,
             "User2",
             "MangaDex",
-            "[Manga2](https://example.com/manga2) - Manga\n```Watching | 10 of 50 episodes```",
+            "[Manga2](https://example.com/manga2) - Manga\n```Watching | 10 of 50 chapters```",
         ),  # Different media type
         (
+            Anime,
             "Long Anime Title",
             "https://example.com/long-anime-title",
             "Movie",
@@ -151,16 +154,24 @@ async def test_send_embed_with_missing_rights(bot: PiglooBot, logot: Logot):
     ids=["basic_anime", "manga_example", "long_names_movie"],
 )
 def test_create_embed_from_feed(
-    media_name, media_url, media_type, progress, max_progress, user_name, service_name, expected_description
+    media_type,
+    media_name,
+    media_url,
+    media_format,
+    progress,
+    max_progress,
+    user_name,
+    service_name,
+    expected_description,
 ):
     # Arrange
     service = Service(id=uuid.uuid4(), name=service_name)
     user = User(id=uuid.uuid4(), name=user_name, service=service)
-    media = Media(
+    media = media_type(
         id=uuid.uuid4(),
         name=media_name,
         url=media_url,
-        type=media_type,
+        format=media_format,
         service=service,
         max_progress=max_progress,
         image="https://example.com/image.jpg",
@@ -190,9 +201,10 @@ def test_create_embed_from_feed(
 
 
 @pytest.mark.parametrize(
-    "media_name, media_url, media_type, progress, max_progress, user_name, service_name, expected_description",
+    "media_type, media_name, media_url, media_format, progress, max_progress, user_name, service_name, expected_description",
     [
         (
+            Anime,
             "Anime1",
             "https://example.com/anime1",
             "TV",
@@ -203,6 +215,7 @@ def test_create_embed_from_feed(
             "[Anime1](https://example.com/anime1) - TV\n```Watching | 3 of 12 episodes```",
         ),
         (
+            Manga,
             "Manga2",
             "https://example.com/manga2",
             "Manga",
@@ -210,9 +223,10 @@ def test_create_embed_from_feed(
             50,
             "User2",
             "MangaDex",
-            "[Manga2](https://example.com/manga2) - Manga\n```Watching | 10 of 50 episodes```",
+            "[Manga2](https://example.com/manga2) - Manga\n```Watching | 10 of 50 chapters```",
         ),  # Different media type
         (
+            Anime,
             "Long Anime Title",
             "https://example.com/long-anime-title",
             "Movie",
@@ -229,9 +243,10 @@ def test_create_embed_from_feed(
 async def test_send_feed(
     bot: PiglooBot,
     logot: Logot,
+    media_type,
     media_name,
     media_url,
-    media_type,
+    media_format,
     progress,
     max_progress,
     user_name,
@@ -243,11 +258,11 @@ async def test_send_feed(
     channel = guild.channels[0]
     service = Service(id=uuid.uuid4(), name=service_name)
     user = User(id=uuid.uuid4(), name=user_name, service=service)
-    media = Media(
+    media = media_type(
         id=uuid.uuid4(),
         name=media_name,
         url=media_url,
-        type=media_type,
+        format=media_format,
         service=service,
         max_progress=max_progress,
         image="https://example.com/image.jpg",

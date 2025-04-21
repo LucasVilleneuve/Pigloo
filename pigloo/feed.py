@@ -1,4 +1,4 @@
-from pydantic import BaseModel, UUID4, AwareDatetime, HttpUrl
+from pydantic import UUID4, AwareDatetime, BaseModel, HttpUrl
 
 
 class Service(BaseModel):
@@ -19,7 +19,26 @@ class Media(BaseModel):
     max_progress: int
     url: HttpUrl
     image: HttpUrl
-    type: str  # e.g. "anime", "manga", etc.
+    format: str  # e.g. "TV", "Movie", etc.
+
+    def build_progress_str(self, progress: int) -> str:
+        return f"{progress} of {self.max_progress}"
+
+
+class Anime(Media):
+    def __init__(self, **data):
+        super().__init__(**data)
+
+    def build_progress_str(self, progress: int) -> str:
+        return f"{progress} of {self.max_progress} episodes"
+
+
+class Manga(Media):
+    def __init__(self, **data):
+        super().__init__(**data)
+
+    def build_progress_str(self, progress: int) -> str:
+        return f"{progress} of {self.max_progress} chapters"
 
 
 class Feed(BaseModel):
