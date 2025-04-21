@@ -8,9 +8,14 @@ from pigloo.feed import Feed
 
 
 def create_embed_from_feed(feed: Feed) -> Optional[discord.Embed]:
+    """Creates a Discord embed from a given feed.
+
+    Constructs an embed message containing information from the feed, such as
+    media details, user, service, and progress.
+    """
     try:
         description = f"[{feed.media.name}]({feed.media.url}) - {feed.media.format}\n"
-        description += f"```Watching | {feed.media.build_progress_str(feed.progress)}```"
+        description += f"```{feed.status.label} | {feed.media.build_progress_str(feed.progress)}```"
         embed = discord.Embed(colour=0xEED000, description=description, timestamp=feed.datetime)
         embed.set_thumbnail(url=feed.media.image)
         author_name = f"{feed.user.name}'s {feed.service.name}"

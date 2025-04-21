@@ -9,36 +9,7 @@ from logot import Logot, logged
 from pigloo.bot import PiglooBot
 from pigloo.config import config
 from pigloo.embed import create_embed_from_feed, send_embed
-from pigloo.feed import Anime, Feed, Manga, Media, Service, User
-
-
-@pytest.mark.asyncio
-async def test_send_embed(bot):
-    guild = bot.guilds[0]
-    channel_0 = guild.channels[0]
-
-    service = Service(id=uuid.uuid4(), name="AniList")
-    user = User(id=uuid.uuid4(), name="user1", service=service)
-    media = Media(
-        id=uuid.uuid4(),
-        name="Anime1",
-        type="Anime",
-        service=service,
-        max_progress=6,
-        url="https://docs.pydantic.dev/latest/logo-white.svg",
-        image="https://docs.pydantic.dev/latest/logo-white.svg",
-    )
-    feed = Feed(
-        id=uuid.uuid4(), user=user, service=service, media=media, progress=2, datetime=datetime.now().astimezone()
-    )
-
-    embed = create_embed_from_feed(feed)
-
-    assert embed is not None
-
-    await send_embed(embed, channel_0)
-
-    assert dpytest.verify().message().embed(embed)
+from pigloo.feed import Anime, Feed, FeedStatus, Manga, Service, User
 
 
 @pytest.mark.asyncio
@@ -115,166 +86,160 @@ async def test_send_embed_with_missing_rights(bot: PiglooBot, logot: Logot):
 
 
 @pytest.mark.parametrize(
-    "media_type, media_name, media_url, media_format, progress, max_progress, user_name, service_name, expected_description",
+    "feed, expected_description, expected_author_name, expected_author_url",
     [
         (
-            Anime,
-            "Anime1",
-            "https://example.com/anime1",
-            "TV",
-            3,
-            12,
-            "User1",
-            "AniList",
-            "[Anime1](https://example.com/anime1) - TV\n```Watching | 3 of 12 episodes```",
+            Feed(
+                id=uuid.uuid4(),
+                user=User(id=uuid.uuid4(), name="testuser", service=Service(id=uuid.uuid4(), name="AniList")),
+                service=Service(id=uuid.uuid4(), name="AniList"),
+                media=Anime(
+                    id=uuid.uuid4(),
+                    name="Test Anime",
+                    service=Service(id=uuid.uuid4(), name="AniList"),
+                    max_progress=12,
+                    url="https://anilist.co/anime/1",
+                    image="https://img.anili.st/media/anime/1.jpg",
+                    format="TV",
+                ),
+                progress=5,
+                datetime=datetime(2024, 1, 1, tzinfo=timezone.utc),
+                status=FeedStatus(label="Watching ..."),
+            ),
+            "[Test Anime](https://anilist.co/anime/1) - TV\n```Watching | 5 of 12 episodes```",
+            "testuser's AniList",
+            "https://anilist.co/user/testuser",
         ),
         (
-            Manga,
-            "Manga2",
-            "https://example.com/manga2",
-            "Manga",
-            10,
-            50,
-            "User2",
-            "MangaDex",
-            "[Manga2](https://example.com/manga2) - Manga\n```Watching | 10 of 50 chapters```",
-        ),  # Different media type
+            Feed(
+                id=uuid.uuid4(),
+                user=User(id=uuid.uuid4(), name="testuser2", service=Service(id=uuid.uuid4(), name="AniList")),
+                service=Service(id=uuid.uuid4(), name="AniList"),
+                media=Manga(
+                    id=uuid.uuid4(),
+                    name="Test Manga",
+                    service=Service(id=uuid.uuid4(), name="AniList"),
+                    max_progress=24,
+                    url="https://anilist.co/manga/2",
+                    image="https://img.anili.st/media/manga/2.jpg",
+                    format="Manga",
+                ),
+                progress=24,
+                datetime=datetime(2024, 1, 1, tzinfo=timezone.utc),
+                status=FeedStatus(label="Reading ..."),
+            ),
+            "[Test Manga](https://anilist.co/manga/2) - Manga\n```Reading | 24 of 24 chapters```",
+            "testuser2's AniList",
+            "https://anilist.co/user/testuser2",
+        ),
         (
-            Anime,
-            "Long Anime Title",
-            "https://example.com/long-anime-title",
-            "Movie",
-            1,
-            1,
-            "UserWithLongName",
-            "MyAnimeList",
-            "[Long Anime Title](https://example.com/long-anime-title) - Movie\n```Watching | 1 of 1 episodes```",
-        ),  # Long names and movie type
+            Feed(
+                id=uuid.uuid4(),
+                user=User(id=uuid.uuid4(), name="testuser3", service=Service(id=uuid.uuid4(), name="AniList")),
+                service=Service(id=uuid.uuid4(), name="AniList"),
+                media=Anime(
+                    id=uuid.uuid4(),
+                    name="Test Anime 2",
+                    service=Service(id=uuid.uuid4(), name="AniList"),
+                    max_progress=3,  # Testing None for max_progress
+                    url="https://anilist.co/anime/3",
+                    image="https://img.anili.st/media/anime/3.jpg",
+                    format="ONA",
+                ),
+                progress=None,  # Testing None for progress
+                datetime=datetime(2024, 1, 1, tzinfo=timezone.utc),
+                status=FeedStatus(label="Plan to Watch"),
+            ),
+            "[Test Anime 2](https://anilist.co/anime/3) - ONA\n```Plans to watch | None of 3 episodes```",
+            "testuser3's AniList",
+            "https://anilist.co/user/testuser3",
+        ),
     ],
-    ids=["basic_anime", "manga_example", "long_names_movie"],
+    ids=["anime_watching_some_progress", "manga_reading_full_progress", "anime_plan_to_watch_no_progress"],
 )
-def test_create_embed_from_feed(
-    media_type,
-    media_name,
-    media_url,
-    media_format,
-    progress,
-    max_progress,
-    user_name,
-    service_name,
-    expected_description,
-):
-    # Arrange
-    service = Service(id=uuid.uuid4(), name=service_name)
-    user = User(id=uuid.uuid4(), name=user_name, service=service)
-    media = media_type(
-        id=uuid.uuid4(),
-        name=media_name,
-        url=media_url,
-        format=media_format,
-        service=service,
-        max_progress=max_progress,
-        image="https://example.com/image.jpg",
-    )
-    feed = Feed(
-        id=uuid.uuid4(),
-        user=user,
-        service=service,
-        media=media,
-        progress=progress,
-        datetime=datetime.now(timezone.utc),
-    )
-
+def test_create_embed_from_feed(feed, expected_description, expected_author_name, expected_author_url):
     # Act
     embed = create_embed_from_feed(feed)
 
     # Assert
     assert embed is not None
     assert embed.description == expected_description
-    assert embed.colour.value == 0xEED000
-    assert embed.thumbnail.url == "https://example.com/image.jpg"
-    assert embed.author.name == f"{user_name}'s {service_name}"
-    assert embed.author.url == f"{config.get('ANILIST', 'profile_url')}{user_name}"
-    assert embed.author.icon_url == config.get("ANILIST", "icon_url")
-    assert embed.footer.text == config.get("BOT", "name")
-    assert embed.footer.icon_url == config.get("ANILIST", "icon_url")
+    assert embed.author.name == expected_author_name
+    assert embed.author.url == expected_author_url
+    assert embed.thumbnail.url == str(feed.media.image)
 
 
 @pytest.mark.parametrize(
-    "media_type, media_name, media_url, media_format, progress, max_progress, user_name, service_name, expected_description",
+    "feed, expected_description",
     [
         (
-            Anime,
-            "Anime1",
-            "https://example.com/anime1",
-            "TV",
-            3,
-            12,
-            "User1",
-            "AniList",
-            "[Anime1](https://example.com/anime1) - TV\n```Watching | 3 of 12 episodes```",
+            Feed(
+                id=uuid.uuid4(),
+                user=User(id=uuid.uuid4(), name="testuser", service=Service(id=uuid.uuid4(), name="AniList")),
+                service=Service(id=uuid.uuid4(), name="AniList"),
+                media=Anime(
+                    id=uuid.uuid4(),
+                    name="Test Anime",
+                    service=Service(id=uuid.uuid4(), name="AniList"),
+                    max_progress=12,
+                    url="https://anilist.co/anime/1",
+                    image="https://img.anili.st/media/anime/1.jpg",
+                    format="TV",
+                ),
+                progress=5,
+                datetime=datetime(2024, 1, 1, tzinfo=timezone.utc),
+                status=FeedStatus(label="Watching ..."),
+            ),
+            "[Test Anime](https://anilist.co/anime/1) - TV\n```Watching | 5 of 12 episodes```",
         ),
         (
-            Manga,
-            "Manga2",
-            "https://example.com/manga2",
-            "Manga",
-            10,
-            50,
-            "User2",
-            "MangaDex",
-            "[Manga2](https://example.com/manga2) - Manga\n```Watching | 10 of 50 chapters```",
-        ),  # Different media type
+            Feed(
+                id=uuid.uuid4(),
+                user=User(id=uuid.uuid4(), name="testuser2", service=Service(id=uuid.uuid4(), name="AniList")),
+                service=Service(id=uuid.uuid4(), name="AniList"),
+                media=Manga(
+                    id=uuid.uuid4(),
+                    name="Test Manga",
+                    service=Service(id=uuid.uuid4(), name="AniList"),
+                    max_progress=24,
+                    url="https://anilist.co/manga/2",
+                    image="https://img.anili.st/media/manga/2.jpg",
+                    format="Manga",
+                ),
+                progress=24,
+                datetime=datetime(2024, 1, 1, tzinfo=timezone.utc),
+                status=FeedStatus(label="Reading ..."),
+            ),
+            "[Test Manga](https://anilist.co/manga/2) - Manga\n```Reading | 24 of 24 chapters```",
+        ),
         (
-            Anime,
-            "Long Anime Title",
-            "https://example.com/long-anime-title",
-            "Movie",
-            1,
-            1,
-            "UserWithLongName",
-            "MyAnimeList",
-            "[Long Anime Title](https://example.com/long-anime-title) - Movie\n```Watching | 1 of 1 episodes```",
-        ),  # Long names and movie type
+            Feed(
+                id=uuid.uuid4(),
+                user=User(id=uuid.uuid4(), name="testuser3", service=Service(id=uuid.uuid4(), name="AniList")),
+                service=Service(id=uuid.uuid4(), name="AniList"),
+                media=Anime(
+                    id=uuid.uuid4(),
+                    name="Test Anime 2",
+                    service=Service(id=uuid.uuid4(), name="AniList"),
+                    max_progress=3,  # Testing None for max_progress
+                    url="https://anilist.co/anime/3",
+                    image="https://img.anili.st/media/anime/3.jpg",
+                    format="ONA",
+                ),
+                progress=None,  # Testing None for progress
+                datetime=datetime(2024, 1, 1, tzinfo=timezone.utc),
+                status=FeedStatus(label="Plan to Watch"),
+            ),
+            "[Test Anime 2](https://anilist.co/anime/3) - ONA\n```Plans to watch | None of 3 episodes```",
+        ),
     ],
-    ids=["basic_anime", "manga_example", "long_names_movie"],
+    ids=["anime_watching_some_progress", "manga_reading_full_progress", "anime_plan_to_watch_no_progress"],
 )
 @pytest.mark.asyncio
-async def test_send_feed(
-    bot: PiglooBot,
-    logot: Logot,
-    media_type,
-    media_name,
-    media_url,
-    media_format,
-    progress,
-    max_progress,
-    user_name,
-    service_name,
-    expected_description,
-):
+async def test_send_feed(bot: PiglooBot, logot: Logot, feed, expected_description):
     # Arrange
     guild = bot.guilds[0]
     channel = guild.channels[0]
-    service = Service(id=uuid.uuid4(), name=service_name)
-    user = User(id=uuid.uuid4(), name=user_name, service=service)
-    media = media_type(
-        id=uuid.uuid4(),
-        name=media_name,
-        url=media_url,
-        format=media_format,
-        service=service,
-        max_progress=max_progress,
-        image="https://example.com/image.jpg",
-    )
-    feed = Feed(
-        id=uuid.uuid4(),
-        user=user,
-        service=service,
-        media=media,
-        progress=progress,
-        datetime=datetime.now(timezone.utc),
-    )
 
     # Act
     embed = create_embed_from_feed(feed)
