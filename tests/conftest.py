@@ -22,11 +22,8 @@ async def bot(request):
     if isinstance(b.loop, _LoopSentinel):
         await b._async_setup_hook()
 
-    # Loading cogs
-    # for filename in os.listdir("./pigloo/cogs"):
-    #     if filename.endswith(".py"):
-    #         print("Loading cogs " + f"pigloo.cogs.{filename[:-3]}")
-    #         await b.load_extension(f"pigloo.cogs.{filename[:-3]}")
+    # Load cogs
+    await b.setup_hook()
 
     dpytest.configure(b)
 

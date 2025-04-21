@@ -1,17 +1,14 @@
 import asyncio
+import os
 import signal
 import traceback
-import uuid
 from contextlib import suppress
-from datetime import datetime
 
 import discord
 from discord.ext.commands import Bot
 from loguru import logger
 
 from pigloo.config import config
-from pigloo.embed import create_embed_from_feed, send_embed
-from pigloo.feed import Feed, Media, Service, User
 
 
 class PiglooBot(Bot):
@@ -23,6 +20,13 @@ class PiglooBot(Bot):
 
         super().__init__(command_prefix=config.get("BOT", "prefix"), intents=intents)
         self.add_commands()
+
+    async def setup_hook(self):
+        # Loading cogs
+        for filename in os.listdir("./pigloo/cogs"):
+            if filename.endswith(".py"):
+                logger.info(f"Loading cogs pigloo.cogs.{filename[:-3]}")
+                await self.load_extension(f"pigloo.cogs.{filename[:-3]}")
 
     async def start(self):
         logger.success("Starting Pigloo...")
@@ -37,6 +41,9 @@ class PiglooBot(Bot):
 
     async def on_error(self, event, *args, **kwargs):
         logger.error(f"Event {event}. {traceback.format_exc()}")
+
+    async def on_command_error(self, ctx, error):
+        logger.error(f"Command error: {error}")
 
     def add_commands(self):
         @self.command(name="ping")

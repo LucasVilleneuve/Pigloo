@@ -47,7 +47,7 @@ async def test_send_embed_empty(bot: PiglooBot, logot: Logot):
 
     # Assert
     logot.assert_logged(logged.info(f"Message sent in channel: {channel.id}"))
-    dpytest.verify().message().nothing()
+    assert dpytest.verify().message().embed(None)
 
 
 @pytest.mark.asyncio
@@ -62,7 +62,7 @@ async def test_send_embed_incorrect_channel(bot: PiglooBot, logot: Logot):
 
     # Assert
     logot.assert_logged(logged.error("Channel is None, cannot send embed."))
-    dpytest.verify().message().nothing()
+    assert dpytest.verify().message().nothing()
 
 
 @pytest.mark.asyncio
